@@ -1,3 +1,4 @@
+#Super important as this allows one to interface with the program.
 import time
 
 while True:
