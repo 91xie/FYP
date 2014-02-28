@@ -11,7 +11,7 @@ import numpy
 
 ser_ua = serial.Serial("/dev/ttyAMA0",38400)  #Ultrasonic Anemometer
 ser_xb = serial.Serial("/dev/ttyUSB2",38400)  #XB module
-ser_ws = serial.Serial("/dev/ttyUSB0",115200) #Weather station/waspmote
+ser_ws = serial.Serial("/dev/ttyUSB1",115200) #Weather station/waspmote
 
 ser_ua.timeout = 0.01
 ser_ws.timeout = 0.05
@@ -44,7 +44,7 @@ def float2strarray (afloatarr):
     for m in range(M):
         for n in range(N):
             #Formatting of the string is done here...
-            strarr[m][n]= "{0:8.4f}".format(afloatarr[m][n])
+            strarr[m][n]= "{0:8.3f}".format(afloatarr[m][n])
             
     return strarr
 
@@ -69,7 +69,7 @@ ws_M = 4
 ua_array2D= [[] for _ in range(ua_M)]
 ws_array2D= [[] for _ in range(ws_M)]
 #ws_array2D= [[]]
-deltamin= 1
+deltamin= 0.5
 now  = datetime.now()
 now_plus_delta = now + timedelta(minutes = deltamin)
 
@@ -120,13 +120,13 @@ while True:
 
         for m in range(ws_M-1): #-1 because we the last value is rain data
             ws_outarray1.append(mean_max_min_std(ws_array2D[m]))
-        ws_outarray2.append(numpy.sum(ws_array2D[ws_M]))
+        ws_outarray2.append(numpy.sum(ws_array2D[ws_M-1]))
         #ws_outarray1 will be added to ws_outarray2
-        ws_outarray1.append(ws_outarray2)
-        #print datetime.now()
-        #print ws_outarray
+        
         ws_strarray = float2strarray(ws_outarray1)
-        stringarray2serial( ["u","v","RH","Rain_mm"], ws_strarray,ser_xb)
+        stringarray2serial( ["u","v","RH"], ws_strarray,ser_xb)
+
+        print "Rain_mm" + str(numpy.sum(ws_array2D[ws_M-1]))
         
         #reset buffer
         ua_array2D= [[] for _ in range(ua_M)]
