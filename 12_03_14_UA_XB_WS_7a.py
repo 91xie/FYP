@@ -8,7 +8,7 @@ print "start"
 
 ser_ua = serial.Serial("/dev/ttyAMA0",38400)  #Ultrasonic Anemometer
 ser_xb = serial.Serial("/dev/ttyUSB0",38400, parity = serial.PARITY_EVEN)  #XB module
-ser_ws = serial.Serial("/dev/ttyUSB1",115200) #Weather station/waspmote
+ser_ws = serial.Serial("/dev/ttyUSB2",115200) #Weather station/waspmote
 
 ser_ua.flush()
 ser_ws.flush()
