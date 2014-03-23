@@ -158,7 +158,8 @@ while True:
         #print ua_outarray
         ua_strarray = float2strarray(ua_outarray)
         #stringarray2serial( ["!ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray,ser_xb)
-        superline = superline + stringarray2serial2( ["ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray)
+        #superline = superline + stringarray2serial2( ["ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray)
+        ser_xb.write(stringarray2serial2( ["ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray) + "\n")
         for m in range(ws_M-1): #-1 because we the last value is rain data
             ws_outarray1.append(mean_max_min_std(ws_array2D[m]))
         ws_outarray2.append(numpy.sum(ws_array2D[ws_M-1]))
@@ -166,11 +167,12 @@ while True:
         
         ws_strarray = float2strarray(ws_outarray1)
         #stringarray2serial( ["!ws1#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray,ser_xb)
-        #superline = superline + stringarray2serial2( ["?ws#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray)
-        #superline = superline + "#Rain_mm,value:"+str(numpy.sum(ws_array2D[ws_M-1]))+"\n"
+        superline = stringarray2serial2( ["ws#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray)
+        superline = superline + "#Rain_mm,value:"+str(numpy.sum(ws_array2D[ws_M-1]))
         print superline
         #superline = "hello\n"
-        ser_xb.write( superline )
+        time.sleep(1)
+        ser_xb.write( superline +"\n")
         
         ua_array2D= [[] for _ in range(ua_M)]
         ws_array2D= [[] for _ in range(ws_M)]

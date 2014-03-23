@@ -1,8 +1,3 @@
-#built from 14_02_14_UA_XB_WS_4
-#going to make a special exception to the rain gauge data
-#the array of values need to be summed.
-
-
 from datetime import datetime, date, time, timedelta
 import time
 import serial
@@ -25,7 +20,12 @@ ser_ws.timeout = 0.03
 ser_xb.timeout = 0.01
 
 def ser_readline(aser):
-##########
+#Readline from Serial Device
+#if serial data is present
+    #read the character one at a time.
+    #if the character is not equal to the new line character
+    #else if the character is equal to a new line character.
+        #output the stored values in the buffer
     line = ""
     if aser.inWaiting():
         while True:
@@ -34,9 +34,10 @@ def ser_readline(aser):
                 return line
             else:
                 line = line + data
-        aser.flush()##
+        aser.flush()
 
 def mean_max_min_std(anarray):
+#Computes mean, max, min and std for a non empty array and returns the 4 values as an array
     if len(anarray) ==0:
         return [0]
     amean = numpy.mean(anarray)
@@ -46,7 +47,7 @@ def mean_max_min_std(anarray):
     return [amean, amax, amin, astd]
 
 def float2strarray (afloatarr):
-    #Converts an array of numbers into a formatted array of strings
+#Converts an array of numbers into a formatted array of strings
     M = len(afloatarr)
     N = len(afloatarr[0])
 
@@ -59,12 +60,7 @@ def float2strarray (afloatarr):
     return strarr
 
 def isdigitarray(anarray):
-##    for aval in anarray:
-##        aval = aval.replace("-","")
-##        aval = aval.replace(".","")
-##        if aval.isdigit() == False:
-##            return False
-##    return True
+#Checks if all of the values in an array are numbers    
     for aval in anarray:
         try:
             float(aval)
@@ -73,7 +69,7 @@ def isdigitarray(anarray):
     return True
 
 def stringarray2serial( Names1D, Str2D, aser):
-    
+#Concatenates the headers to an array of data set values and sends it to a specified serial port
     M = len(Str2D)
     N = len(Str2D[0])
     superline = ""
@@ -86,6 +82,7 @@ def stringarray2serial( Names1D, Str2D, aser):
     aser.write(superline+"\n")
 
 def stringarray2serial2(Names1D, Str2D):
+#Concatenates the headers to an array of data set values 
     M = len(Str2D)
     N = len(Str2D[0])
     superline = ""
@@ -96,7 +93,7 @@ def stringarray2serial2(Names1D, Str2D):
         superline = superline + line
     return superline
 ###########################################################
-    #Main
+#Main
     
 ua_M = 4
 ws_M = 4
@@ -112,10 +109,10 @@ now_plus_delta = now + timedelta(minutes = deltamin)
 ser_readline(ser_ua)
 ser_readline(ser_ws)
 while True:
-    if datetime.now() < now_plus_delta:
+    if datetime.now() < now_plus_delta: #Read values
         ua_readline = ser_readline(ser_ua)
         ws_readline = ser_readline(ser_ws)
-        if ua_readline != None:
+        if ua_readline != None: #ultrasonic anemometer
             print "ua" + ua_readline
             ua_splitline = ua_readline.split(' ')
             ua_splitline = filter(None,ua_splitline)
@@ -123,10 +120,9 @@ while True:
                 for m in range (ua_M):
                     ua_array2D[m].append(float(ua_splitline[m]))
                 
-        if ws_readline != None:
+        if ws_readline != None: #weather station values
             print ws_readline
             if len(ws_readline) >0:
-                #print "ws" + ws_readline +">"
                 ws_splitline = ws_readline.split('#')
                 ws_splitline = filter(None,ws_splitline)
                 
@@ -145,42 +141,33 @@ while True:
                 #assuming that first val is wind speed in m/s
                 #assuming that secondval is direction
             
-        
-    else:
+    else: #Compute and Send
         
         ua_outarray = []
         ws_outarray1 = [] #this is for mean, max, min, std dev etc.
-        ws_outarray2 = [] #this is total, needs one day
+        ws_outarray2 = [] #this is total, needs one value
         superline = ""
         for m in range(ua_M):
             ua_outarray.append(mean_max_min_std(ua_array2D[m]))
-        #print datetime.now()
-        #print ua_outarray
         ua_strarray = float2strarray(ua_outarray)
-        #stringarray2serial( ["!ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray,ser_xb)
-        superline = superline + stringarray2serial2( ["ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray)
+        superline = stringarray2serial2( ["ua#u,mean,max,min,std:","#v,mean,max,min,std:","#w,mean,max,min,std:","#t,mean,max,min,std:"], ua_strarray) + "\n"
+        print superline
+        ser_xb.write(superline)
         for m in range(ws_M-1): #-1 because we the last value is rain data
             ws_outarray1.append(mean_max_min_std(ws_array2D[m]))
         ws_outarray2.append(numpy.sum(ws_array2D[ws_M-1]))
         
         
-        ws_strarray = float2strarray(ws_outarray1)
-        #stringarray2serial( ["!ws1#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray,ser_xb)
-        #superline = superline + stringarray2serial2( ["?ws#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray)
-        #superline = superline + "#Rain_mm,value:"+str(numpy.sum(ws_array2D[ws_M-1]))+"\n"
+        ws_strarray = float2strarray(ws_outarray1) 
+        superline = stringarray2serial2( ["ws#u,mean,max,min,std:","#v,mean,max,min,std:","#RH,mean,max,min,std:"], ws_strarray)
+        superline = superline + "#Rain_mm,value:"+str(numpy.sum(ws_array2D[ws_M-1]))
         print superline
-        #superline = "hello\n"
-        ser_xb.write( superline )
+        time.sleep(1)
+        ser_xb.write( superline +"\n")
         
         ua_array2D= [[] for _ in range(ua_M)]
         ws_array2D= [[] for _ in range(ws_M)]
+
         #reset timer check
         now = now_plus_delta
         now_plus_delta = now + timedelta(minutes = deltamin)
-
-##    ws_readline = ser_readline(ser_ws)
-##    if ws_readline!= None:
-##        print ws_readline
-##        ser_xb.write(ws_readline+chr(13))
-    
-
